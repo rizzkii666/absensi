@@ -30,10 +30,16 @@ class AttendanceController extends Controller
         }
 
         $now = now('Asia/Jakarta');
-        $attendance = Attendance::firstOrNew([
-            'employee_id' => $employee->id,
-            'attendance_date' => $now->toDateString(),
-        ]);
+        $attendance = Attendance::where('employee_id', $employee->id)
+            ->whereDate('attendance_date', $now->toDateString())
+            ->first();
+
+        if (! $attendance) {
+            $attendance = new Attendance([
+                'employee_id' => $employee->id,
+                'attendance_date' => $now->toDateString(),
+            ]);
+        }
 
         if ($data['type'] === 'in' && $attendance->check_in_at) {
             return back()->withInput()->withErrors(['type' => 'Absen masuk sudah tercatat hari ini.']);
@@ -95,10 +101,16 @@ class AttendanceController extends Controller
         }
 
         $now = now('Asia/Jakarta');
-        $attendance = Attendance::firstOrNew([
-            'employee_id' => $employee->id,
-            'attendance_date' => $now->toDateString(),
-        ]);
+        $attendance = Attendance::where('employee_id', $employee->id)
+            ->whereDate('attendance_date', $now->toDateString())
+            ->first();
+
+        if (! $attendance) {
+            $attendance = new Attendance([
+                'employee_id' => $employee->id,
+                'attendance_date' => $now->toDateString(),
+            ]);
+        }
 
         $type = $data['type'] ?? 'auto';
         if ($type === 'auto' || empty($type)) {

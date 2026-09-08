@@ -4,7 +4,7 @@
 <div class="mx-auto max-w-xl rounded-2xl bg-white p-6 shadow-sm">
     <div class="mb-6 text-center">
         <h1 class="text-2xl font-bold text-slate-800">Sistem Absensi Magang</h1>
-        <p class="text-sm text-slate-500">Arahkan Kartu QR Code ke kamera atau gunakan absensi manual.</p>
+        <p class="text-sm text-slate-500">Scan QR Code atau gunakan absensi manual foto selfie.</p>
     </div>
 
     <!-- Navigation Tabs -->
@@ -38,21 +38,38 @@
             </div>
         </div>
 
+        <!-- Notification / Scanner Info -->
+        <div id="camera-notice" class="hidden rounded-xl bg-amber-50 p-3 text-xs text-amber-800 border border-amber-200">
+            📌 <b>Akses Kamera Terblokir Browser?</b><br>
+            Akses kamera langsung membutuhkan <b>http://localhost:8000</b> atau <b>HTTPS</b>. Jika kamera terblokir, Anda dapat memilih gambar QR Code secara manual menggunakan tombol di bawah ini.
+        </div>
+
         <!-- Scanner Container -->
-        <div class="relative overflow-hidden rounded-2xl bg-slate-900 border border-slate-200">
+        <div class="relative overflow-hidden rounded-2xl bg-slate-900 border border-slate-200 min-h-[250px] flex items-center justify-center">
             <div id="qr-reader" class="w-full"></div>
             <div id="scanner-placeholder" class="flex flex-col items-center justify-center p-8 text-center text-slate-400">
-                <svg class="mb-3 h-12 w-12 text-slate-500 animate-pulse" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 4v1m0 14v1m8-8h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
+                <svg class="mb-3 h-10 w-10 text-slate-500 animate-pulse" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
                 </svg>
                 <p class="text-sm font-medium">Memulai Kamera Scanner...</p>
+                <button type="button" onclick="startScanner()" class="mt-3 rounded-lg bg-slate-800 px-3 py-1.5 text-xs text-slate-200 hover:bg-slate-700">
+                    🔄 Coba Buka Kamera Lagi
+                </button>
             </div>
+        </div>
+
+        <!-- Opsi Alternatif: Upload Gambar QR Code -->
+        <div class="rounded-xl border border-dashed border-slate-300 p-4 text-center bg-slate-50">
+            <p class="mb-2 text-xs font-semibold text-slate-600">Opsi Alternatif: Unggah Foto/File QR Code</p>
+            <input type="file" id="qr-file-input" accept="image/*" class="hidden" onchange="scanQrFromFile(this)">
+            <button type="button" onclick="document.getElementById('qr-file-input').click()" class="rounded-lg bg-slate-200 px-4 py-2 text-xs font-bold text-slate-700 hover:bg-slate-300 transition-colors">
+                📁 Pilih Gambar / Foto QR Code
+            </button>
         </div>
 
         <!-- Notification Result Overlay -->
         <div id="qr-result" class="hidden rounded-xl p-4 transition-all"></div>
-
-        <p class="text-center text-xs text-slate-400">Pastikan pencahayaan cukup dan posisi QR Code berada di tengah layar scanner.</p>
     </div>
 
     <!-- TAB 2: MANUAL & FOTO -->
@@ -70,7 +87,7 @@
             @csrf
             <div>
                 <label class="mb-1 block text-sm font-medium text-slate-700">NIM Pegawai</label>
-                <input name="nim" value="{{ old('nim') }}" required maxlength="50" class="w-full rounded-xl border border-slate-300 p-3 focus:border-blue-500 focus:outline-none" placeholder="Masukkan NIM (Contoh: 2026001)">
+                <input name="nim" value="{{ old('nim') }}" required maxlength="50" class="w-full rounded-xl border border-slate-300 p-3 text-sm focus:border-blue-500 focus:outline-none" placeholder="Masukkan NIM (Contoh: 2026001)">
             </div>
             <div>
                 <span class="mb-1 block text-sm font-medium text-slate-700">Jenis Absensi</span>
@@ -90,10 +107,10 @@
                 <video id="camera" class="hidden w-full rounded-xl bg-slate-900 mb-2" autoplay playsinline></video>
                 <canvas id="canvas" class="hidden"></canvas>
                 <img id="preview" class="hidden w-full rounded-xl mb-2" alt="Pratinjau foto">
-                <input id="photo" name="photo" type="file" accept="image/jpeg,image/png,image/webp" capture="user" required class="mt-2 block w-full text-sm text-slate-500 file:mr-4 file:rounded-lg file:border-0 file:bg-slate-100 file:px-4 file:py-2 file:text-sm file:font-semibold file:text-slate-700 hover:file:bg-slate-200">
+                <input id="photo" name="photo" type="file" accept="image/*" capture="user" required class="mt-2 block w-full text-sm text-slate-500 file:mr-4 file:rounded-lg file:border-0 file:bg-slate-100 file:px-4 file:py-2 file:text-sm file:font-semibold file:text-slate-700 hover:file:bg-slate-200">
                 <div class="flex gap-2 mt-2">
-                    <button type="button" id="open-camera" class="rounded-lg bg-slate-100 px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-200">📷 Gunakan kamera</button>
-                    <button type="button" id="capture" class="hidden rounded-lg bg-slate-800 px-3 py-2 text-xs font-semibold text-white hover:bg-slate-900">📸 Ambil foto</button>
+                    <button type="button" id="open-camera" class="rounded-lg bg-slate-100 px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-200">📷 Ambil Dari Kamera Web</button>
+                    <button type="button" id="capture" class="hidden rounded-lg bg-slate-800 px-3 py-2 text-xs font-semibold text-white hover:bg-slate-900">📸 Jepret Foto</button>
                 </div>
                 <p id="camera-message" class="mt-1 text-xs text-slate-400"></p>
             </div>
@@ -102,7 +119,7 @@
     </div>
 
     <div class="mt-6 border-t border-slate-100 pt-4 text-center">
-        <a href="{{ route('login') }}" class="text-xs font-medium text-blue-700 hover:underline">🔐 Portal Login Admin</a>
+        <a href="{{ route('login') }}" class="text-xs font-semibold text-blue-700 hover:underline">🔐 Portal Login Admin</a>
     </div>
 </div>
 
@@ -112,22 +129,19 @@
 let html5QrCode = null;
 let isProcessingScan = false;
 
-// Web Audio API Beep generator
 function playAudioBeep(isSuccess = true) {
     try {
         const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
         const osc = audioCtx.createOscillator();
         const gain = audioCtx.createGain();
         osc.type = 'sine';
-        osc.frequency.setValueAtTime(isSuccess ? 880 : 220, audioCtx.currentTime); // 880Hz A5 (High) or 220Hz (Low)
+        osc.frequency.setValueAtTime(isSuccess ? 880 : 220, audioCtx.currentTime);
         gain.gain.setValueAtTime(0.15, audioCtx.currentTime);
         osc.connect(gain);
         gain.connect(audioCtx.destination);
         osc.start();
         osc.stop(audioCtx.currentTime + (isSuccess ? 0.2 : 0.4));
-    } catch (e) {
-        // Ignore audio failure if restricted
-    }
+    } catch (e) {}
 }
 
 function switchTab(tab) {
@@ -155,9 +169,13 @@ function startScanner() {
     if (html5QrCode && html5QrCode.isScanning) return;
 
     document.getElementById('scanner-placeholder').classList.remove('hidden');
-    html5QrCode = new Html5Qrcode("qr-reader");
+    document.getElementById('camera-notice').classList.add('hidden');
 
-    const config = { fps: 10, qrbox: { width: 250, height: 250 } };
+    if (!html5QrCode) {
+        html5QrCode = new Html5Qrcode("qr-reader");
+    }
+
+    const config = { fps: 10, qrbox: { width: 220, height: 220 } };
 
     html5QrCode.start(
         { facingMode: "environment" },
@@ -166,8 +184,7 @@ function startScanner() {
         onQrScanError
     ).then(() => {
         document.getElementById('scanner-placeholder').classList.add('hidden');
-    }).catch(err => {
-        // Fallback to user facing camera if environment camera is unavailable
+    }).catch(() => {
         html5QrCode.start(
             { facingMode: "user" },
             config,
@@ -175,10 +192,14 @@ function startScanner() {
             onQrScanError
         ).then(() => {
             document.getElementById('scanner-placeholder').classList.add('hidden');
-        }).catch(error => {
+        }).catch(err => {
             document.getElementById('scanner-placeholder').innerHTML = `
-                <p class="text-xs text-red-400">Gagal mengaktifkan kamera scanner.<br>Pastikan Anda memberikan izin akses kamera di browser.</p>
+                <p class="text-xs text-red-400 px-4">Kamera tidak dapat diakses langsung oleh browser.<br>Gunakan opsi <b>Unggah Foto/File QR Code</b> di bawah ini.</p>
+                <button type="button" onclick="document.getElementById('qr-file-input').click()" class="mt-3 rounded-lg bg-blue-600 px-3 py-1.5 text-xs text-white hover:bg-blue-700">
+                    📁 Unggah Gambar QR Code
+                </button>
             `;
+            document.getElementById('camera-notice').classList.remove('hidden');
         });
     });
 }
@@ -191,11 +212,31 @@ function stopScanner() {
     }
 }
 
-async function onQrScanSuccess(decodedText, decodedResult) {
+async function scanQrFromFile(input) {
+    if (!input.files || input.files.length === 0) return;
+    const file = input.files[0];
+    
+    if (!html5QrCode) {
+        html5QrCode = new Html5Qrcode("qr-reader");
+    }
+
+    try {
+        const decodedText = await html5QrCode.scanFile(file, true);
+        onQrScanSuccess(decodedText);
+    } catch (err) {
+        playAudioBeep(false);
+        const resultBox = document.getElementById('qr-result');
+        resultBox.className = "rounded-xl p-4 border bg-red-50 border-red-300 text-red-900 text-sm";
+        resultBox.innerHTML = `❌ Gambar tidak mengandung QR Code yang valid atau terbaca.`;
+        resultBox.classList.remove('hidden');
+        setTimeout(() => resultBox.classList.add('hidden'), 3500);
+    }
+}
+
+async function onQrScanSuccess(decodedText) {
     if (isProcessingScan) return;
     isProcessingScan = true;
 
-    // Get selected type (auto, in, out)
     const typeRadios = document.getElementsByName('qr_type');
     let selectedType = 'auto';
     for (const r of typeRadios) {
@@ -255,18 +296,14 @@ async function onQrScanSuccess(decodedText, decodedResult) {
         resultBox.innerHTML = `❌ Network Error: Gagal menghubungi server.`;
     }
 
-    // Auto resume scanner after delay
     setTimeout(() => {
         isProcessingScan = false;
         resultBox.classList.add('hidden');
     }, 3500);
 }
 
-function onQrScanError(error) {
-    // Silent handler for frame scan attempts
-}
+function onQrScanError(error) {}
 
-// Auto start scanner on load
 document.addEventListener('DOMContentLoaded', () => {
     startScanner();
 });
@@ -279,7 +316,7 @@ document.getElementById('open-camera').onclick = async () => {
     manualStream = await navigator.mediaDevices.getUserMedia({video: {facingMode: 'user'}, audio: false});
     video.srcObject = manualStream; video.classList.remove('hidden'); document.getElementById('capture').classList.remove('hidden');
   } catch {
-    document.getElementById('camera-message').textContent = 'Kamera tidak dapat diakses. Unggah foto secara manual.';
+    document.getElementById('camera-message').textContent = 'Kamera tidak dapat diakses langsung oleh browser. Gunakan tombol pilih file foto di atas.';
   }
 };
 document.getElementById('capture').onclick = () => {
