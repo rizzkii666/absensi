@@ -138,24 +138,52 @@ function closeQrModal() {
 }
 
 function downloadQrCode() {
-    const img = document.querySelector('#qrcode-box img');
     const canvas = document.querySelector('#qrcode-box canvas');
+    const img = document.querySelector('#qrcode-box img');
     
-    let imageSrc = '';
-    if (img && img.src) {
-        imageSrc = img.src;
-    } else if (canvas) {
-        imageSrc = canvas.toDataURL("image/png");
+    let dataUrl = '';
+    if (canvas) {
+        dataUrl = canvas.toDataURL("image/png");
+    } else if (img && img.src && img.src.startsWith('data:')) {
+        dataUrl = img.src;
     }
 
-    if (!imageSrc) return;
+    if (!dataUrl) {
+        alert('Gambar QR Code sedang disiapkan. Silakan coba sebentar lagi.');
+        return;
+    }
 
-    const link = document.createElement('a');
-    link.href = imageSrc;
-    link.download = `QR_Absensi_${currentNim}_${currentName.replace(/\s+/g, '_')}.png`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    // Convert base64 dataUrl to Blob for 100% reliable download on Chrome/Edge/Firefox
+    try {
+        fetch(dataUrl)
+            .then(res => res.blob())
+            .then(blob => {
+                const blobUrl = URL.createObjectURL(blob);
+                const link = document.createElement('a');
+                link.href = blobUrl;
+                link.download = `QR_Absensi_${currentNim}_${currentName.replace(/\s+/g, '_')}.png`;
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                setTimeout(() => URL.revokeObjectURL(blobUrl), 2000);
+            })
+            .catch(() => {
+                // Fallback to direct anchor click
+                const link = document.createElement('a');
+                link.href = dataUrl;
+                link.download = `QR_Absensi_${currentNim}_${currentName.replace(/\s+/g, '_')}.png`;
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+            });
+    } catch (e) {
+        const link = document.createElement('a');
+        link.href = dataUrl;
+        link.download = `QR_Absensi_${currentNim}_${currentName.replace(/\s+/g, '_')}.png`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    }
 }
 
 function printQrCard() {
