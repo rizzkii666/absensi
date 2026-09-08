@@ -9,6 +9,10 @@ Route::get('/', [AttendanceController::class, 'create'])->name('attendance.creat
 Route::post('/attendance', [AttendanceController::class, 'store'])
     ->middleware('throttle:attendance')
     ->name('attendance.store');
+Route::post('/attendance/qr', [AttendanceController::class, 'storeQr'])
+    ->middleware('throttle:attendance')
+    ->name('attendance.store_qr');
+
 
 Route::middleware('guest')->group(function (): void {
     Route::get('/admin/login', [AdminAuthController::class, 'create'])->name('login');
